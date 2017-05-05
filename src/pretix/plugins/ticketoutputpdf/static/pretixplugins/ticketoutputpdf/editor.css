@@ -1,0 +1,16 @@
+#editor {
+    display: flex;
+}
+#editor-canvas-area {
+    flex-grow: 1;
+    position: relative;
+}
+#editor-toolbox-area {
+    width: 250px;
+    flex-grow: 0;
+}
+#fabric-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
