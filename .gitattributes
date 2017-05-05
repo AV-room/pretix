@@ -4,3 +4,5 @@ src/static/typeahead/* linguist-vendored
 src/static/moment/* linguist-vendored
 src/static/datetimepicker/* linguist-vendored
 src/static/charts/* linguist-vendored
+src/pretix/plugins/ticketoutputpdf/static/pretixplugins/ticketoutputpdf/fabric.* linguist-vendored
+src/pretix/plugins/ticketoutputpdf/static/pretixplugins/ticketoutputpdf/pdf.* linguist-vendored

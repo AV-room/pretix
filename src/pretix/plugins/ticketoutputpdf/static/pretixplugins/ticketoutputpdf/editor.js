@@ -1,7 +1,6 @@
 /*globals $, gettext, fabric, PDFJS*/
-var QRCodeArea = fabric.util.createClass(fabric.Rect, {
-
-    type: 'QRCodeArea',
+fabric.Barcodearea = fabric.util.createClass(fabric.Rect, {
+    type: 'barcodearea',
 
     initialize: function (options) {
         options || (options = {});
@@ -11,8 +10,7 @@ var QRCodeArea = fabric.util.createClass(fabric.Rect, {
     },
 
     toObject: function () {
-        return fabric.util.object.extend(this.callSuper('toObject'), {
-        });
+        return fabric.util.object.extend(this.callSuper('toObject'), {});
     },
 
     _render: function (ctx) {
@@ -21,8 +19,11 @@ var QRCodeArea = fabric.util.createClass(fabric.Rect, {
         ctx.font = '16px Helvetica';
         ctx.fillStyle = '#fff';
         ctx.fillText(gettext('QR Code'), -this.width / 2, -this.height / 2 + 20);
-    }
+    },
 });
+fabric.Barcodearea.fromObject = function(object, callback, forceAsync) {
+    return fabric.Object._fromObject('Barcodearea', object, callback, forceAsync);
+};
 
 
 var editor = {
@@ -31,6 +32,8 @@ var editor = {
     $cva: null,
     $fabric: null,
     objects: [],
+    history: [],
+    _history_pos: 0,
 
     _load_pdf: function () {
         // TODO: Loading indicators
@@ -79,6 +82,14 @@ var editor = {
         editor.$fcv.get(0).width = editor.$pdfcv.get(0).width;
         editor.$fcv.get(0).height = editor.$pdfcv.get(0).height;
         editor.fabric = new fabric.Canvas('fabric-canvas');
+
+        editor.fabric.on(
+            'object:modified', function () {
+                editor._create_savepoint();
+            },
+            'object:added', function () {
+                editor._create_savepoint();
+            });
     },
 
     _draw_objects: function () {
@@ -97,12 +108,23 @@ var editor = {
             lockScalingX: true,
             lockScalingY: true,
         });
-        text.setControlsVisibility({'mtr': false});
+        text.setControlsVisibility({
+            'tr': false,
+            'tl': false,
+            'mt': false,
+            'br': false,
+            'bl': false,
+            'mb': false,
+            'mr': false,
+            'ml': false,
+            'mtr': false
+        });
         editor.fabric.add(text);
+        editor._create_savepoint();
     },
 
     _add_qrcode: function () {
-        var rect = new QRCodeArea({
+        var rect = new fabric.Barcodearea({
             left: 100,
             top: 100,
             width: 100,
@@ -113,6 +135,75 @@ var editor = {
         });
         rect.setControlsVisibility({'mtr': false});
         editor.fabric.add(rect);
+        editor._create_savepoint();
+    },
+
+    _on_keydown: function (e) {
+        var step = e.shiftKey ? 10 : 1;
+        var thing = editor.fabric.getActiveObject() ? editor.fabric.getActiveObject() : editor.fabric.getActiveGroup();
+        console.log(e.keyCode, e.ctrlKey, e.shiftKey);
+        switch (e.keyCode) {
+            case 38:  /* Up arrow */
+                thing.set('top', thing.get('top') - step);
+                thing.setCoords();
+                break;
+            case 40:  /* Down arrow */
+                thing.set('top', thing.get('top') + step);
+                thing.setCoords();
+                break;
+            case 37:  /* Left arrow  */
+                thing.set('left', thing.get('left') - step);
+                thing.setCoords();
+                break;
+            case 39:  /* Right arrow  */
+                thing.set('left', thing.get('left') + step);
+                thing.setCoords();
+                break;
+            case 46:  /* Delete */
+                thing.remove();
+                break;
+            case 89:  /* Y */
+                if (e.ctrlKey) {
+                    editor._redo();
+                }
+                break;
+            case 90:  /* Z */
+                if (e.ctrlKey) {
+                    editor._undo();
+                }
+                break;
+            default:
+                return;
+        }
+        e.preventDefault();
+        editor.fabric.renderAll();
+    },
+
+    _create_savepoint: function () {
+        var state = JSON.stringify(editor.fabric);
+        if (editor._history_pos > 0) {
+            editor.history.splice(-1 * editor._history_pos, editor._history_pos);
+            editor._history_pos = 0;
+        }
+        editor.history.push(state);
+    },
+
+    _undo: function undo() {
+        if (editor._history_pos < editor.history.length) {
+            editor._history_pos += 1;
+            editor.fabric.clear().renderAll();
+            editor.fabric.loadFromJSON(editor.history[editor.history.length - 1 - editor._history_pos]);
+            editor.fabric.renderAll();
+        }
+    },
+
+    _redo: function redo() {
+        if (editor._history_pos > 0) {
+            editor._history_pos -= 1;
+            editor.fabric.clear().renderAll();
+            editor.fabric.loadFromJSON(editor.history[editor.history.length - 1 - editor._history_pos]);
+            editor.fabric.renderAll();
+        }
     },
 
     init: function () {
@@ -123,6 +214,8 @@ var editor = {
         editor.$pdfcv.get(0).width = editor.$cva.width();
         $("#editor-add-qrcode").click(editor._add_qrcode);
         $("#editor-add-text").click(editor._add_text);
+        editor.$cva.get(0).tabIndex = 1000;
+        editor.$cva.on("keydown", editor._on_keydown);
     }
 
 };
