@@ -1,7 +1,5 @@
 from decimal import Decimal
-from importlib import import_module
 
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
@@ -21,7 +19,6 @@ from pretix.control.signals import (
 
 from ..logdisplay import OVERVIEW_BLACKLIST
 
-SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 NUM_WIDGET = '<div class="numwidget"><span class="num">{num}</span><span class="text">{text}</span></div>'
 
 
@@ -169,6 +166,27 @@ def shop_state_widget(sender, **kwargs):
 
 
 @receiver(signal=event_dashboard_widgets)
+def checkin_widget(sender, **kwargs):
+    size_qs = OrderPosition.objects.filter(order__event=sender, order__status='p')
+    checked_qs = OrderPosition.objects.filter(order__event=sender, order__status='p', checkins__isnull=False)
+
+    # if this setting is False, we check only items for admission
+    if not sender.settings.ticket_download_nonadm:
+        size_qs = size_qs.filter(item__admission=True)
+        checked_qs = checked_qs.filter(item__admission=True)
+
+    return [{
+        'content': NUM_WIDGET.format(num='{}/{}'.format(checked_qs.count(), size_qs.count()), text=_('Checked in')),
+        'display_size': 'small',
+        'priority': 50,
+        'url': reverse('control:event.orders.checkins', kwargs={
+            'event': sender.slug,
+            'organizer': sender.organizer.slug
+        })
+    }]
+
+
+@receiver(signal=event_dashboard_widgets)
 def welcome_wizard_widget(sender, **kwargs):
     template = get_template('pretixcontrol/event/dashboard_widget_welcome.html')
     ctx = {
@@ -217,21 +235,11 @@ def event_index(request, organizer, event):
 
     a_qs = request.event.requiredaction_set.filter(done=False)
 
-    has_domain = request.event.organizer.domains.exists()
-
     ctx = {
         'widgets': rearrange(widgets),
         'logs': qs[:5],
         'actions': a_qs[:5] if can_change_orders else [],
-        'has_domain': has_domain
     }
-
-    if not request.event.live and has_domain:
-        s = SessionStore()
-        s['pretix_event_access_{}'.format(request.event.pk)] = request.session.session_key
-        s.create()
-        ctx['new_session'] = s.session_key
-        request.session['event_access'] = True
 
     for a in ctx['actions']:
         a.display = a.display(request)
@@ -244,7 +252,7 @@ def user_event_widgets(**kwargs):
     user = kwargs.pop('user')
     widgets = []
 
-    events = user.get_events_with_any_permission().order_by('-date_from', 'name').select_related('organizer')
+    events = user.get_events_with_any_permission().order_by('-date_from', 'name').select_related('organizer')[:100]
     for event in events:
         widgets.append({
             'content': '<div class="event">{event}<span class="from">{df}</span><span class="to">{dt}</span></div>'.format(

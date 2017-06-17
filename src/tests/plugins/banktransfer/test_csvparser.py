@@ -15,7 +15,7 @@ class CsvImportTest(TestCase):
         with open(os.path.join(DATA_DIR, filename), 'rb') as f:
             data = csvimport.get_rows_from_file(f)
             self.assertEqual(data, expected)
-            parsed = csvimport.parse(data, hint)
+            parsed, good = csvimport.parse(data, hint)
             self.assertEqual(parsed, expected_parsed)
 
     def test_sample_file_bbbank(self):
@@ -125,7 +125,7 @@ class CsvImportTest(TestCase):
     def test_sample_file_postbank(self):
         expected = [
             ['Buchungstag', 'Wertstellung', 'Umsatzart', 'Buchungsdetails', 'Auftraggeber', 'Empfänger',
-             'Betrag (\x80)', 'Saldo (\x80)'],
+             'Betrag (€)', 'Saldo (€)'],
             ['07.08.2016', '01.08.2016', 'Gutschrift', 'Verwendungszweck 2015ABCDE', 'Karla Kundin',
              'Fiktive Veranstaltungsgesellschaft mbH', '\xA4 42,00', '\xA4 1.337,42'],
             ['29.07.2016', '29.07.2016', 'Gutschrift', 'Referenz NOTPROVIDED', 'Lars Lieferant',

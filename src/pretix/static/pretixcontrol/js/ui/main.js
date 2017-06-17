@@ -83,7 +83,7 @@ $(function () {
     });
 
     $('.collapsible').collapse();
-    
+
     $('[data-toggle="tooltip"]').tooltip();
 
     var url = document.location.toString();
@@ -105,11 +105,12 @@ $(function () {
     // Vouchers
     $("#voucher-bulk-codes-generate").click(function () {
         var num = $("#voucher-bulk-codes-num").val();
+        var prefix = $('#voucher-bulk-codes-prefix').val();
         if (num != "") {
-            $(".form-group:has(#voucher-bulk-codes-num)").addClass("has-error");
             var url = $(this).attr("data-rng-url");
             $("#id_codes").html("Generating...");
-            $.getJSON(url + '?num=' + num, function (data) {
+            $(".form-group:has(#voucher-bulk-codes-num)").removeClass("has-error");
+            $.getJSON(url + '?num=' + num + '&prefix=' + escape(prefix), function (data) {
                 $("#id_codes").val(data.codes.join("\n"));
             });
         } else {
@@ -185,6 +186,24 @@ $(function () {
             };
         update();
         earlier_field.on("dp.change", update);
+    });
+
+    $(".colorpickerfield").colorpicker({
+        format: 'hex',
+        align: 'left',
+        customClass: 'colorpicker-2x',
+        sliders: {
+            saturation: {
+                maxLeft: 200,
+                maxTop: 200
+            },
+            hue: {
+                maxTop: 200
+            },
+            alpha: {
+                maxTop: 200
+            }
+        }
     });
 
     $("input[data-checkbox-dependency]").each(function () {

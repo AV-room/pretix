@@ -1,8 +1,8 @@
 from django.conf.urls import include, url
 
 from pretix.control.views import (
-    auth, dashboards, event, global_settings, item, main, orders, organizer,
-    user, vouchers, waitinglist,
+    auth, checkin, dashboards, event, global_settings, item, main, orders,
+    organizer, search, typeahead, user, vouchers, waitinglist,
 )
 
 urlpatterns = [
@@ -45,6 +45,8 @@ urlpatterns = [
         name='organizer.team.delete'),
     url(r'^events/$', main.EventList.as_view(), name='events'),
     url(r'^events/add$', main.EventWizard.as_view(), name='events.add'),
+    url(r'^events/typeahead/$', typeahead.event_list, name='events.typeahead'),
+    url(r'^search/orders/$', search.OrderSearch.as_view(), name='search.orders'),
     url(r'^event/(?P<organizer>[^/]+)/(?P<event>[^/]+)/', include([
         url(r'^$', dashboards.event_index, name='event.index'),
         url(r'^live/$', event.EventLive.as_view(), name='event.live'),
@@ -138,5 +140,6 @@ urlpatterns = [
         url(r'^orders/$', orders.OrderList.as_view(), name='event.orders'),
         url(r'^waitinglist/$', waitinglist.WaitingListView.as_view(), name='event.orders.waitinglist'),
         url(r'^waitinglist/auto_assign$', waitinglist.AutoAssign.as_view(), name='event.orders.waitinglist.auto'),
+        url(r'^checkins/$', checkin.CheckInView.as_view(), name='event.orders.checkins'),
     ])),
 ]

@@ -8,7 +8,7 @@
 <head>
     <title>{% block thetitle %}{% endblock %}</title>
     {% compress css %}
-        <link rel="stylesheet" type="text/css" href="{% static "lightbox/css/lightbox.css" %}" />
+        <link rel="stylesheet" type="text/x-scss" href="{% static "lightbox/css/lightbox.scss" %}" />
     {% endcompress %}
     {% if css_file %}
         <link rel="stylesheet" type="text/css" href="{{ css_file }}"/>
@@ -27,6 +27,7 @@
         <script type="text/javascript" src="{% static "pretixbase/js/asynctask.js" %}"></script>
         <script type="text/javascript" src="{% static "pretixbase/js/asyncdownload.js" %}"></script>
         <script type="text/javascript" src="{% static "pretixpresale/js/ui/cart.js" %}"></script>
+        <script type="text/javascript" src="{% static "pretixpresale/js/ui/typocheck.js" %}"></script>
         <script type="text/javascript" src="{% static "lightbox/js/lightbox.min.js" %}"></script>
     {% endcompress %}
     <meta name="referrer" content="origin">

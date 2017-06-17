@@ -83,7 +83,7 @@ PRETIX_PASSWORD_RESET = config.getboolean('pretix', 'password_reset', fallback=T
 SITE_URL = config.get('pretix', 'url', fallback='http://localhost')
 
 PRETIX_PLUGINS_DEFAULT = config.get('pretix', 'plugins_default',
-                                    fallback='pretix.plugins.sendmail,pretix.plugins.statistics')
+                                    fallback='pretix.plugins.sendmail,pretix.plugins.statistics,pretix.plugins.checkinlists')
 
 DEFAULT_CURRENCY = config.get('pretix', 'currency', fallback='EUR')
 CURRENCIES = list(currencies)
@@ -258,7 +258,7 @@ try:
     import debug_toolbar  # noqa
     if DEBUG:
         INSTALLED_APPS.append('debug_toolbar.apps.DebugToolbarConfig')
-        MIDDLEWARE.insert(0, 'pretix.helpers.debug.DebugMiddlewareCompatibilityShim')
+        MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 except ImportError:
     pass
 
@@ -376,7 +376,9 @@ COMPRESS_PRECOMPILERS = (
 COMPRESS_ENABLED = COMPRESS_OFFLINE = not debug_fallback
 
 COMPRESS_CSS_FILTERS = (
-    'compressor.filters.css_default.CssAbsoluteFilter',
+    # CssAbsoluteFilter is incredibly slow, especially when dealing with our _flags.scss
+    # However, we don't need it if we consequently use the static() function in Sass
+    # 'compressor.filters.css_default.CssAbsoluteFilter',
     'compressor.filters.cssmin.CSSCompressorFilter',
 )
 

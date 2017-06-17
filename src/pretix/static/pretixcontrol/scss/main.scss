@@ -11,6 +11,8 @@
 @import "_orders.scss";
 @import "_dashboard.scss";
 @import "../../pretixbase/scss/webfont.scss";
+@import "../../fileupload/jquery.fileupload.scss";
+@import "../../colorpicker/bootstrap-colorpicker.scss";
 
 footer {
     text-align: center;
@@ -27,6 +29,11 @@ nav.navbar {
     display: inline;
 }
 
+#side-menu img.fa-img {
+    height: auto;
+    width: 1.28571em;
+}
+
 nav.navbar .danger, nav.navbar .danger:hover, nav.navbar .danger:active {
     background: $brand-danger !important;
 }
@@ -39,6 +46,16 @@ nav.navbar .danger, nav.navbar .danger:hover, nav.navbar .danger:active {
 .nav-pills {
     margin-bottom: 10px;
 }
+
+#button-shop {
+    padding: 15px;
+    min-height: 50px;
+    border: none;
+    &:hover, &:active {
+        text-decoration: none;
+    }
+}
+
 .product-row {
     padding: 10px 0;
 
@@ -254,5 +271,54 @@ body.loading #wrapper {
     border: 0 !important;
     padding: 0 !important;
     display: block !important;
+}
 
+.colorpicker-2x .colorpicker-saturation {
+    width: 200px;
+    height: 200px;
+}
+
+.colorpicker-2x .colorpicker-hue,
+.colorpicker-2x .colorpicker-alpha {
+    width: 30px;
+    height: 200px;
+}
+
+.colorpicker-2x .colorpicker-color,
+.colorpicker-2x .colorpicker-color div {
+    height: 30px;
+}
+
+.event-name {
+    display: inline-block;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+.dropdown-menu .form-box {
+    padding: 3px 10px;
+}
+
+.event-dropdown {
+    width: 300px;
+}
+.event-dropdown, .mobile-event-dropdown {
+    .event-name-full {
+        display: block;
+    }
+    .event-daterange, .event-organizer {
+        display: block;
+        font-size: $font-size-small;
+        color: $text-muted;
+    }
+    .active .event-daterange, .active .event-organizer, .active a {
+        color: white;
+    }
+    .active {
+        background: $brand-primary;
+        color: white;
+    }
 }

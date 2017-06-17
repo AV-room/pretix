@@ -1,5 +1,6 @@
 {% extends "pretixcontrol/base.html" %}
 {% load i18n %}
+{% load staticfiles %}
 {% block title %}{{ request.event.name }}{% endblock %}
 
 {% block nav %}
@@ -90,6 +91,12 @@
                         {% trans "Waiting list" %}
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'control:event.orders.checkins' organizer=request.event.organizer.slug event=request.event.slug %}"
+                       {% if url_name == "event.orders.checkins" %}class="active"{% endif %}>
+                        {% trans "Check-ins" %}
+                    </a>
+                </li>
             </ul>
         </li>
     {% endif %}
@@ -106,7 +113,9 @@
         <li>
             <a href="{{ nav.url }}" {% if nav.active %}class="active"{% endif %}
             {% if nav.children %}class="has-children"{% endif %}>
-                {% if nav.icon %}
+                {% if nav.icon and "." in nav.icon %}
+                    <img src="{% static nav.icon %}" class="fa-img">
+                {% elif nav.icon %}
                     <i class="fa fa-{{ nav.icon }} fa-fw"></i>
                 {% endif %}
                 {{ nav.label }}

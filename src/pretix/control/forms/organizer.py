@@ -1,9 +1,12 @@
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
+from i18nfield.forms import I18nFormField, I18nTextarea
 
-from pretix.base.forms import I18nModelForm
+from pretix.base.forms import I18nModelForm, SettingsForm
 from pretix.base.models import Organizer, Team
+from pretix.control.forms import ExtFileField
 from pretix.multidomain.models import KnownDomain
 
 
@@ -98,3 +101,28 @@ class TeamForm(forms.ModelForm):
                                         'the permission to change teams and permissions.'))
 
         return data
+
+
+class OrganizerSettingsForm(SettingsForm):
+
+    locales = forms.MultipleChoiceField(
+        choices=settings.LANGUAGES,
+        label=_("Use languages"),
+        widget=forms.CheckboxSelectMultiple,
+        help_text=_('Choose all languages that your organizer homepage should be available in.')
+    )
+
+    organizer_homepage_text = I18nFormField(
+        label=_('Homepage text'),
+        required=False,
+        widget=I18nTextarea,
+        help_text=_('This will be displayed on the organizer homepage.')
+    )
+
+    organizer_logo_image = ExtFileField(
+        label=_('Logo image'),
+        ext_whitelist=(".png", ".jpg", ".svg", ".gif", ".jpeg"),
+        required=False,
+        help_text=_('If you provide a logo image, we will by default not show your organization name '
+                    'in the page header. We will show your logo with a maximal height of 120 pixels.')
+    )

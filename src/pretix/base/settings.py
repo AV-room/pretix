@@ -163,6 +163,10 @@ DEFAULTS = {
         'default': 'False',
         'type': bool
     },
+    'ticket_download_nonadm': {
+        'default': 'True',
+        'type': bool
+    },
     'last_order_modification_date': {
         'default': None,
         'type': datetime
@@ -186,6 +190,10 @@ DEFAULTS = {
     'mail_from': {
         'default': settings.MAIL_FROM,
         'type': str
+    },
+    'mail_text_signature': {
+        'type': LazyI18nString,
+        'default': ""
     },
     'mail_text_resend_link': {
         'type': LazyI18nString,
@@ -232,7 +240,7 @@ Your {event} team"""))
 we successfully received your order for {event} with a total value
 of {total} {currency}. Please complete your payment before {date}.
 
-{paymentinfo}
+{payment_info}
 
 You can change your order details and view the status of your order at
 {url}

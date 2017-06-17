@@ -1,4 +1,5 @@
 import sys
+from importlib import import_module
 
 from django.conf import settings
 from django.core.urlresolvers import Resolver404, get_script_prefix, resolve
@@ -7,6 +8,8 @@ from pretix.base.settings import GlobalSettingsObject
 
 from .signals import html_head, nav_event, nav_global, nav_topbar
 from .utils.i18n import get_javascript_format, get_moment_locale
+
+SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 
 def contextprocessor(request):
@@ -33,11 +36,27 @@ def contextprocessor(request):
 
     _js_payment_weekdays_disabled = '[]'
     _nav_event = []
-    if hasattr(request, 'event'):
+    if getattr(request, 'event', None) and hasattr(request, 'organizer'):
         for receiver, response in nav_event.send(request.event, request=request):
             _nav_event += response
         if request.event.settings.get('payment_term_weekdays'):
             _js_payment_weekdays_disabled = '[0,6]'
+
+        ctx['has_domain'] = request.event.organizer.domains.exists()
+
+        if not request.event.live and ctx['has_domain']:
+            child_sess = request.session.get('child_session_{}'.format(request.event.pk))
+            s = SessionStore()
+            if not child_sess or not s.exists(child_sess):
+                s['pretix_event_access_{}'.format(request.event.pk)] = request.session.session_key
+                s.create()
+                ctx['new_session'] = s.session_key
+                request.session['child_session_{}'.format(request.event.pk)] = s.session_key
+                request.session['event_access'] = True
+            else:
+                ctx['new_session'] = child_sess
+                request.session['event_access'] = True
+
     ctx['nav_event'] = _nav_event
     ctx['js_payment_weekdays_disabled'] = _js_payment_weekdays_disabled
 
@@ -45,12 +64,13 @@ def contextprocessor(request):
     if not hasattr(request, 'event'):
         for receiver, response in nav_global.send(request, request=request):
             _nav_global += response
-    ctx['nav_global'] = _nav_global
+
+    ctx['nav_global'] = sorted(_nav_global, key=lambda n: n['label'])
 
     _nav_topbar = []
     for receiver, response in nav_topbar.send(request, request=request):
         _nav_topbar += response
-    ctx['nav_topbar'] = _nav_topbar
+    ctx['nav_topbar'] = sorted(_nav_topbar, key=lambda n: n['label'])
 
     ctx['js_datetime_format'] = get_javascript_format('DATETIME_INPUT_FORMATS')
     ctx['js_date_format'] = get_javascript_format('DATE_INPUT_FORMATS')

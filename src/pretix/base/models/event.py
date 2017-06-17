@@ -13,7 +13,7 @@ from django.template.defaultfilters import date as _date
 from django.utils.crypto import get_random_string
 from django.utils.timezone import make_aware, now
 from django.utils.translation import ugettext_lazy as _
-from i18nfield.fields import I18nCharField
+from i18nfield.fields import I18nCharField, I18nTextField
 
 from pretix.base.email import CustomSMTPBackend
 from pretix.base.models.base import LoggedModel
@@ -85,6 +85,8 @@ class Event(LoggedModel):
     date_from = models.DateTimeField(verbose_name=_("Event start time"))
     date_to = models.DateTimeField(null=True, blank=True,
                                    verbose_name=_("Event end time"))
+    date_admission = models.DateTimeField(null=True, blank=True,
+                                          verbose_name=_("Admission time"))
     is_public = models.BooleanField(default=False,
                                     verbose_name=_("Visible in public lists"),
                                     help_text=_("If selected, this event may show up on the ticket system's start page "
@@ -99,7 +101,7 @@ class Event(LoggedModel):
         verbose_name=_("Start of presale"),
         help_text=_("No products will be sold before this date."),
     )
-    location = I18nCharField(
+    location = I18nTextField(
         null=True, blank=True,
         max_length=200,
         verbose_name=_("Location"),
@@ -137,7 +139,7 @@ class Event(LoggedModel):
             return []
         return self.plugins.split(",")
 
-    def get_date_from_display(self, tz=None) -> str:
+    def get_date_from_display(self, tz=None, show_times=True) -> str:
         """
         Returns a formatted string containing the start date of the event with respect
         to the current locale and to the ``show_times`` setting.
@@ -145,7 +147,17 @@ class Event(LoggedModel):
         tz = tz or pytz.timezone(self.settings.timezone)
         return _date(
             self.date_from.astimezone(tz),
-            "DATETIME_FORMAT" if self.settings.show_times else "DATE_FORMAT"
+            "DATETIME_FORMAT" if self.settings.show_times and show_times else "DATE_FORMAT"
+        )
+
+    def get_time_from_display(self, tz=None) -> str:
+        """
+        Returns a formatted string containing the start time of the event, ignoring
+        the ``show_times`` setting.
+        """
+        tz = tz or pytz.timezone(self.settings.timezone)
+        return _date(
+            self.date_from.astimezone(tz), "TIME_FORMAT"
         )
 
     def get_date_to_display(self, tz=None) -> str:

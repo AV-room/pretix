@@ -320,20 +320,21 @@ class OrderPayChangeMethod(EventViewMixin, OrderDetailMixin, TemplateView):
                 request.session['payment'] = p['provider'].identifier
                 request.session['payment_change_{}'.format(self.order.pk)] = '1'
 
+                new_fee = p['provider'].calculate_fee(self._total_order_value)
+                self.order.payment_provider = p['provider'].identifier
+                self.order.payment_fee = new_fee
+                self.order.total = self._total_order_value + new_fee
+                self.order._calculate_tax()
+
                 resp = p['provider'].order_prepare(request, self.order)
                 if resp:
                     with transaction.atomic():
-                        new_fee = p['provider'].calculate_fee(self._total_order_value)
                         self.order.log_action('pretix.event.order.payment.changed', {
                             'old_fee': self.order.payment_fee,
                             'new_fee': new_fee,
                             'old_provider': self.order.payment_provider,
                             'new_provider': p['provider'].identifier
                         })
-                        self.order.payment_provider = p['provider'].identifier
-                        self.order.payment_fee = new_fee
-                        self.order.total = self._total_order_value + new_fee
-                        self.order._calculate_tax()
                         self.order.save()
 
                         i = self.order.invoices.filter(is_cancellation=False).last()
@@ -544,6 +545,8 @@ class OrderDownload(EventViewMixin, OrderDetailMixin, View):
             return self.error(_('Ticket download is not (yet) enabled.'))
         if 'position' in kwargs and (self.order_position.addon_to and not self.request.event.settings.ticket_download_addons):
             return self.error(_('Ticket download is not enabled for add-on products.'))
+        if 'position' in kwargs and (not self.order_position.item.admission and not self.request.event.settings.ticket_download_nonadm):
+            return self.error(_('Ticket download is not enabled for non-admission products.'))
 
         if 'position' in kwargs:
             return self._download_position()

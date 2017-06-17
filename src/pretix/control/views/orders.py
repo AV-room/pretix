@@ -55,6 +55,8 @@ class OrderList(EventPermissionRequiredMixin, ListView):
             qs = qs.filter(
                 Q(email__icontains=u) | Q(positions__attendee_name__icontains=u)
                 | Q(positions__attendee_email__icontains=u)
+                | Q(invoice_address__name__icontains=u)
+                | Q(invoice_address__company__icontains=u)
             )
         if self.request.GET.get("status", "") != "":
             s = self.request.GET.get("status", "")
@@ -674,7 +676,7 @@ class ExportDoView(EventPermissionRequiredMixin, ExportMixin, AsyncAction, View)
 
         if not self.exporter.form.is_valid():
             messages.error(self.request, _('There was a problem processing your input. See below for error details.'))
-            return self.get(*args, **kwargs)
+            return self.get(request, *args, **kwargs)
 
         cf = CachedFile()
         cf.date = now()

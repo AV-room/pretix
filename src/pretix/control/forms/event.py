@@ -143,6 +143,7 @@ class EventUpdateForm(I18nModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['slug'].widget.attrs['readonly'] = 'readonly'
+        self.fields['location'].widget.attrs['rows'] = '3'
 
     class Meta:
         model = Event
@@ -153,6 +154,7 @@ class EventUpdateForm(I18nModelForm):
             'currency',
             'date_from',
             'date_to',
+            'date_admission',
             'is_public',
             'presale_start',
             'presale_end',
@@ -161,6 +163,7 @@ class EventUpdateForm(I18nModelForm):
         widgets = {
             'date_from': forms.DateTimeInput(attrs={'class': 'datetimepicker'}),
             'date_to': forms.DateTimeInput(attrs={'class': 'datetimepicker', 'data-date-after': '#id_date_from'}),
+            'date_admission': forms.DateTimeInput(attrs={'class': 'datetimepicker'}),
             'presale_start': forms.DateTimeInput(attrs={'class': 'datetimepicker'}),
             'presale_end': forms.DateTimeInput(attrs={'class': 'datetimepicker',
                                                       'data-date-after': '#id_presale_start'}),
@@ -256,10 +259,12 @@ class EventSettingsForm(SettingsForm):
     )
     attendee_emails_asked = forms.BooleanField(
         label=_("Ask for email addresses per ticket"),
-        help_text=_("Normally, pretix asks for one email address per order and the order confirmation will be send "
-                    "to that email address. If you enable this option, the system will additionally ask for "
+        help_text=_("Normally, pretix asks for one email address per order and the order confirmation will be sent "
+                    "only to that email address. If you enable this option, the system will additionally ask for "
                     "individual email addresses for every admission ticket. This might be useful if you want to "
-                    "obtain individual addresses for every attendee even in case of group orders."),
+                    "obtain individual addresses for every attendee even in case of group orders. However, "
+                    "pretix will send the order confirmation only to the one primary email address, not to the "
+                    "per-attendee addresses."),
         required=False
     )
     attendee_emails_required = forms.BooleanField(
@@ -474,13 +479,22 @@ class MailSettingsForm(SettingsForm):
         label=_("Sender address"),
         help_text=_("Sender address for outgoing emails")
     )
+
+    mail_text_signature = I18nFormField(
+        label=_("Signature"),
+        required=False,
+        widget=I18nTextarea,
+        help_text=_("This will be attached to every email. Available placeholders: {event}"),
+        validators=[PlaceholderValidator(['{event}'])]
+    )
+
     mail_text_order_placed = I18nFormField(
         label=_("Text"),
         required=False,
         widget=I18nTextarea,
-        help_text=_("Available placeholders: {event}, {total}, {currency}, {date}, {paymentinfo}, {url}, "
+        help_text=_("Available placeholders: {event}, {total}, {currency}, {date}, {payment_info}, {url}, "
                     "{invoice_name}, {invoice_company}"),
-        validators=[PlaceholderValidator(['{event}', '{total}', '{currency}', '{date}', '{paymentinfo}',
+        validators=[PlaceholderValidator(['{event}', '{total}', '{currency}', '{date}', '{payment_info}',
                                           '{url}', '{invoice_name}', '{invoice_company}'])]
     )
     mail_text_order_paid = I18nFormField(
@@ -593,7 +607,8 @@ class DisplaySettingsForm(SettingsForm):
         validators=[
             RegexValidator(regex='^#[0-9a-fA-F]{6}$',
                            message=_('Please enter the hexadecimal code of a color, e.g. #990000.'))
-        ]
+        ],
+        widget=forms.TextInput(attrs={'class': 'colorpickerfield'})
     )
     logo_image = ExtFileField(
         label=_('Logo image'),
@@ -628,6 +643,11 @@ class TicketSettingsForm(SettingsForm):
     )
     ticket_download_addons = forms.BooleanField(
         label=_("Offer to download tickets separately for add-on products"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={'data-display-dependency': '#id_ticket_download'}),
+    )
+    ticket_download_nonadm = forms.BooleanField(
+        label=_("Generate tickets for non-admission products"),
         required=False,
         widget=forms.CheckboxInput(attrs={'data-display-dependency': '#id_ticket_download'}),
     )
